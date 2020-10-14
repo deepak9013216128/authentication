@@ -20,7 +20,9 @@
     "mongodb": "^3.6.2",
     "mongoose": "^5.10.7",
     "nodemailer": "^6.4.13",
-    "nodemailer-sendgrid-transport": "^0.2.0"
+    "nodemailer-sendgrid-transport": "^0.2.0",
+    "nodemailer-sendinblue-transport": "^1.2.3",
+    "sib-api-v3-sdk": "^8.0.1"
   },
   "devDependencies": {
     "nodemon": "^2.0.4"
