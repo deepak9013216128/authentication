@@ -17,12 +17,10 @@
     "ejs": "^3.1.5",
     "express": "^4.17.1",
     "express-session": "^1.17.1",
+    "express-validator": "^6.6.1",
     "mongodb": "^3.6.2",
     "mongoose": "^5.10.7",
-    "nodemailer": "^6.4.13",
-    "nodemailer-sendgrid-transport": "^0.2.0",
-    "nodemailer-sendinblue-transport": "^1.2.3",
-    "sib-api-v3-sdk": "^8.0.1"
+    "nodemailer": "^6.4.13"
   },
   "devDependencies": {
     "nodemon": "^2.0.4"
