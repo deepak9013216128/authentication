@@ -42,10 +42,15 @@ app.use((req, res, next) => {
   }
   User.findById(req.session.user._id)
     .then(user => {
+      if (!user) {
+        next();
+      }
       req.user = user;
       next()
     })
-    .catch(err => console.log(err))
+    .catch(err => {
+      next(new Error(err))
+    })
 })
 
 app.use((req, res, next) => {
@@ -58,7 +63,13 @@ app.use('/admin', adminRoutes);
 app.use(shopRoutes);
 app.use(authRoutes)
 
+app.get('/500', errorController.error500)
 app.use(errorController.error404)
+
+app.use((error, req, res, next) => {
+  // res.status(error.httpStatusCode).send(data)
+  res.redirect('/500')
+})
 
 mongoose.connect(
   MONGODB_URI,
@@ -70,17 +81,6 @@ mongoose.connect(
   }
 )
   .then(() => {
-    // User.findOne()
-    //   .then(user => {
-    //     if (!user) {
-    //       const user = new User({
-    //         name: 'deepak',
-    //         email: 'deepak@gmail.com',
-    //         cart: { items: [] }
-    //       })
-    //       user.save()
-    //     }
-    //   })
     app.listen(3000, () =>
       console.log('server is listening on port 3000')
     );

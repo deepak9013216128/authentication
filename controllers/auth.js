@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer')
-const { validationResult } = require('express-validator/check');
+const { validationResult } = require('express-validator');
 
 const User = require('../models/user');
 
@@ -111,7 +111,11 @@ exports.postLogin = (req, res, next) => {
           return res.redirect('/login')
         })
     })
-    .catch(err => console.log(err))
+    .catch(err => {
+      const error = new Error(err)
+      error.httpStatusCode = 500;
+      next(error)
+    })
 };
 
 exports.postSignup = (req, res, next) => {
@@ -147,7 +151,11 @@ exports.postSignup = (req, res, next) => {
         html: '<h1>You successfully signed up!</h1>'
       })
     })
-    .catch(err => console.log(err))
+    .catch(err => {
+      const error = new Error(err)
+      error.httpStatusCode = 500;
+      next(error)
+    })
 }
 
 exports.postLogout = (req, res, next) => {
@@ -202,7 +210,11 @@ exports.postReset = (req, res, next) => {
               .then(result => console.log(result))
           })
       })
-      .catch(err => console.log(err))
+      .catch(err => {
+        const error = new Error(err)
+        error.httpStatusCode = 500;
+        next(error)
+      })
   })
 }
 
@@ -228,7 +240,11 @@ exports.getNewPassword = (req, res, next) => {
         passwordToken: token
       });
     })
-    .catch(err => console.log(err))
+    .catch(err => {
+      const error = new Error(err)
+      error.httpStatusCode = 500;
+      next(error)
+    })
 }
 
 exports.postNewPassword = (req, res, next) => {
@@ -252,5 +268,9 @@ exports.postNewPassword = (req, res, next) => {
     .then(result => {
       res.redirect('/login')
     })
-    .catch(err => console.log(err))
+    .catch(err => {
+      const error = new Error(err)
+      error.httpStatusCode = 500;
+      next(error)
+    })
 }
