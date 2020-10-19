@@ -1,6 +1,7 @@
 const { validationResult } = require('express-validator');
 
 const Product = require('../models/product');
+const fileHelper = require('../utils/file');
 
 exports.getAddProduct = (req, res, next) => {
   // res.sendFile(path.join(rootDir, 'views', 'add-product.html'))
@@ -41,7 +42,7 @@ exports.getEditProduct = (req, res, next) => {
 exports.postEditProduct = (req, res, next) => {
   const { productId } = req.body;
   const updatedTitle = req.body.title;
-  const updatedImageUrl = req.body.imageUrl;
+  const image = req.file;
   const updatedPrice = req.body.price;
   const updatedDesc = req.body.description;
   const errors = validationResult(req);
@@ -55,7 +56,6 @@ exports.postEditProduct = (req, res, next) => {
       hasError: true,
       product: {
         title: updatedTitle,
-        imageUrl: updatedImageUrl,
         price: updatedPrice,
         description: updatedDesc,
         _id: productId
@@ -70,7 +70,10 @@ exports.postEditProduct = (req, res, next) => {
         return res.redirect('/')
       }
       product.title = updatedTitle
-      product.imageUrl = updatedImageUrl
+      if (image) {
+        fileHelper.deleteFile(product.imageUrl)
+        product.imageUrl = image.path
+      }
       product.price = updatedPrice
       product.description = updatedDesc
       return product.save()
@@ -87,8 +90,23 @@ exports.postEditProduct = (req, res, next) => {
 }
 
 exports.postAddProduct = (req, res, next) => {
-  const { title, imageUrl, price, description } = req.body;
+  const { title, price, description } = req.body;
   const errors = validationResult(req);
+
+  const image = req.file;
+  if (!image) {
+    return res.status(422).render('admin/edit-product', {
+      pageTitle: 'Add Product',
+      path: '/admin/add-product',
+      editing: false,
+      hasError: true,
+      errorMessage: 'Attached file is not image!',
+      validationErrors: [],
+      product: { title, price, description }
+    })
+  }
+
+  const imageUrl = image.path;
 
   if (!errors.isEmpty()) {
     console.log(errors.array())
@@ -99,7 +117,7 @@ exports.postAddProduct = (req, res, next) => {
       hasError: true,
       errorMessage: errors.array()[0].msg,
       validationErrors: errors.array(),
-      product: { title, imageUrl, price, description }
+      product: { title, price, description }
     })
   }
 
@@ -160,7 +178,14 @@ exports.getProducts = (req, res, next) => {
 
 exports.postDeleteProduct = (req, res, next) => {
   const { productId } = req.body;
-  Product.deleteOne({ _id: productId, userId: req.user._id })
+  Product.findById(productId)
+    .then(product => {
+      if (!product) {
+        throw new Error('Product not Found!')
+      }
+      fileHelper.deleteFile(product.imageUrl);
+      return Product.deleteOne({ _id: productId, userId: req.user._id })
+    })
     .then(() => {
       console.log('DELETE PRODUCT!')
       res.redirect('/admin/products')

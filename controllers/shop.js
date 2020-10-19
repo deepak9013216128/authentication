@@ -1,3 +1,7 @@
+const path = require('path');
+const fs = require('fs');
+const PDFDocument = require('pdfkit');
+
 const Product = require('../models/product');
 const Order = require('../models/order');
 
@@ -151,9 +155,70 @@ exports.getOrders = (req, res, next) => {
     })
 }
 
-exports.getCheckout = (req, res, next) => {
-  res.render('shop/checkout', {
-    pageTitle: 'Checkout',
-    path: '/checkout'
-  })
+exports.getInvoice = (req, res, next) => {
+  const { orderId } = req.params;
+
+  Order.findById(orderId)
+    .then(order => {
+      if (!order) {
+        return next(new Error('Order not found!'))
+      }
+      if (order.user.userId.toString() !== req.user._id.toString()) {
+        return next(new Error('Unauthorized'))
+      }
+      const invoiceName = 'invoice-' + orderId + '.pdf';
+      const invoicePath = path.join('data', 'invoices', invoiceName)
+      // fs.readFile(invoicePath, (err, data) => {
+      //   if (err) {
+      //     return next(err)
+      //   }
+      //   res.setHeader('Content-Type', 'application/pdf')
+      //   res.setHeader('Content-Dispositon', 'attachment; filename="' + invoiceName + '"')
+      //   res.send(data)
+      // })
+      const pdfDoc = new PDFDocument();
+      res.setHeader('Content-Type', 'application/pdf')
+      res.setHeader('Content-Dispositon', 'attachment; filename="' + invoiceName + '"')
+      pdfDoc.pipe(fs.createWriteStream(invoicePath))
+      pdfDoc.pipe(res)
+
+      pdfDoc.fontSize(26).text('Invoice', {
+        align: 'center',
+        underline: true
+      })
+      pdfDoc.moveDown(1)
+
+      pdfDoc.fontSize(14)
+        .text('Item', { align: 'left' })
+        .moveUp(1)
+        .text('Price', { align: 'right' })
+      pdfDoc.fontSize(26).text('------------------------------------------------------', {
+        align: 'center'
+      })
+
+      let totalPrice = 0;
+      order.products.forEach(prod => {
+        pdfDoc.fontSize(14)
+          .text(`${prod.product.title}`, { align: 'left' })
+          .moveUp(1)
+          .text(` - `, { align: 'center' })
+          .moveUp(1)
+          .text(`${prod.quantity} X $${prod.product.price}`, { align: 'right' })
+        totalPrice += prod.quantity * prod.product.price;
+      })
+      pdfDoc.fontSize(26).text('------------------------------------------------------', {
+        align: 'center'
+      })
+      pdfDoc.fontSize(20).text(
+        `Total Price : $${totalPrice}`,
+        { align: 'center' }
+      )
+      pdfDoc.fontSize(14)
+        .text('Quantity', 440, 132)
+      pdfDoc.end();
+
+      // const file = fs.createReadStream(invoicePath);
+      // file.pipe(res)
+    })
+    .catch(err => next(err))
 }
